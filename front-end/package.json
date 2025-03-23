@@ -22,12 +22,11 @@
     "semantic-ui-react": "^2.0.3"
   },
   "scripts": {
-    "start": "react-scripts start",
+    "start": "export NODE_OPTIONS=--openssl-legacy-provider && react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },
-  "proxy": "http://45.113.232.23:5984",
   "eslintConfig": {
     "extends": "react-app"
   },

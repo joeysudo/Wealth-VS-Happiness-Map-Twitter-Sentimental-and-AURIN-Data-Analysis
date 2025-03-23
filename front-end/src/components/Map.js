@@ -5,7 +5,7 @@ import Tooltip from "./Tooltip";
 
 
 const TOKEN =
-  "pk.eyJ1Ijoiam9udGF5eXciLCJhIjoiY2s4aXcwbnA0MGFqYjNscDZicm9haXA3cCJ9.rI3D6Y4ZETQnYukX9RCOow";
+  "pk.eyJ1Ijoiamh1c3VkbyIsImEiOiJjbThsazJrbGExMmllMnJweG8yb2c4MjBuIn0.b_ZHcECoHKLT2xnrVjxc9A";
 
 const initialState = {
   map_data: [],

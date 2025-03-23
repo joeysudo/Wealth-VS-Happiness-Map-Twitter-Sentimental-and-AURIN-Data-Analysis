@@ -21,7 +21,14 @@ const initialState = {
   ],
   states_data: [],
   data_loaded: false,
-  fields: ["sentiment_score", "tweet_counts","median_house_price","unemployed_rate", "weekly_household_income","average_monthly_mortgage","median_personal_income"],
+  fields: [
+    "sentiment_score",
+    "tweet_counts",
+    "unemployed_rate",
+    "weekly_household_income",
+    "average_monthly_mortgage",
+    "median_personal_income"
+  ],
   query: "sentiment_score",
 };
 class App extends Component {
@@ -33,19 +40,39 @@ class App extends Component {
 
   fetchStateData = async () => {
     try {
+      console.log("Starting to fetch data...");
       const response = await axios({
         method: "get",
-        url: "/front_end/output/out_data.json",
+        url: "/output_final.json",
+        timeout: 5000, // 5 second timeout
       });
-      console.log(response)
+      console.log("Raw response received:", response);
+      
+      if (!response.data) {
+        throw new Error("No data received from server");
+      }
+      
+      console.log("Response data type:", typeof response.data);
+      console.log("Response data length:", Array.isArray(response.data) ? response.data.length : 'not an array');
+      
       const states_data = this.processData(response.data);
+      console.log("Data processed successfully. Number of records:", states_data.length);
  
       this.setState({
         states_data,
         data_loaded: true,
       });
     } catch (e) {
-      console.log("unable to retrieve data", e);
+      console.error("Error in fetchStateData:", e);
+      console.error("Error name:", e.name);
+      console.error("Error message:", e.message);
+      console.error("Error stack:", e.stack);
+      
+      // Set error state
+      this.setState({
+        data_loaded: true,
+        error: e.message
+      });
     }
   };
 
@@ -54,22 +81,15 @@ class App extends Component {
 
     for (const d of data) {
       let obj = {
-        sa4_name:d.sa4_name_2016,
-        sentiment_score: d.sentiment_score[0],
-        tweet_counts: d.tweet_counts[0],
-        unemployed_rate: d.unemployed_rate[0],
-        median_house_price: d.median_house_price[0],
-        weekly_household_income: d.equivalised_total_household_income_census_median_weekly[0],
-        average_monthly_mortgage: d.rent_mortgage_payments_census_average_monthly_household_payment[0],
-        median_personal_income:d.median_aud[0],
-        sentiment_score_std: d.sentiment_score[1],
-        tweet_counts_std: d.tweet_counts[1],
-        unemployed_rate_std: d.unemployed_rate[1],
-        median_house_price_std: d.median_house_price[1],
-        weekly_household_income_std: d.equivalised_total_household_income_census_median_weekly[1],
-        average_monthly_mortgage_std: d.rent_mortgage_payments_census_average_monthly_household_payment[1],
-        median_personal_income_std:d.median_aud[1],
-        coordinates:d.centroid
+        sa4_name: d.sa4_name_2016,
+        sentiment_score: d.sentiment_score,
+        tweet_counts: d.tweet_counts,
+        unemployed_rate: d.unemployed_rate,
+        median_house_price: d.median_house_price || 0, // Handle missing data
+        weekly_household_income: d.equivalised_total_household_income_census_median_weekly,
+        average_monthly_mortgage: d.rent_mortgage_payments_census_average_monthly_household_payment,
+        median_personal_income: d.median_aud,
+        coordinates: d.centroid
       };
       processed.push(obj);
     }
@@ -85,54 +105,77 @@ class App extends Component {
   };
 
   render() {
-    const { colors, states_data, data_loaded, fields, query} = this.state;
+    const { colors, states_data, data_loaded, fields, query, error } = this.state;
 
-    return data_loaded ? (
-      
+    if (!data_loaded) {
+      return (
+        <div className="root">
+          <div style={{ padding: '20px', textAlign: 'center' }}>
+            <h2>Loading data...</h2>
+            <p>Please wait while we fetch the data...</p>
+          </div>
+        </div>
+      );
+    }
+
+    if (error) {
+      return (
+        <div className="root">
+          <div style={{ padding: '20px', textAlign: 'center', color: 'red' }}>
+            <h2>Error Loading Data</h2>
+            <p>Error message: {error}</p>
+            <p>Please check if the data file exists in the correct location.</p>
+          </div>
+        </div>
+      );
+    }
+
+    if (!states_data || states_data.length === 0) {
+      return (
+        <div className="root">
+          <div style={{ padding: '20px', textAlign: 'center' }}>
+            <h2>No data available</h2>
+            <p>There was an error loading the data. Please check the console for details.</p>
+          </div>
+        </div>
+      );
+    }
+
+    return (
       <div className="root">
         <BrowserRouter>
-        <Switch>
-        <Route exact path="/">
-        <Home />
-      </Route>
-      <Route exact path="/map">
-      <Map
-          colors={colors}
-          data={states_data}
-          fields={fields}
-          query={query}
-        />
-      </Route>
-      <Route exact path="/personal_income">
-        <Chart1 
-        data={states_data}
-          />
-      </Route>
-      <Route exact path="/unemployment_rate">
-        <Chart2
-        data={states_data}
-          />
-      </Route>
-      <Route exact path="/house_price">
-        <Chart3
-        data={states_data}
-          />
-      </Route>
-      <Route exact path="/average_monthly_morgage">
-        <Chart4
-        data={states_data}
-          />
-      </Route>
-      <Route exact path="/weekly_household_income">
-        <Chart5
-        data={states_data}
-          />
-      </Route>
-      <Route component={NotFound} />
-         </Switch>
+          <Switch>
+            <Route exact path="/">
+              <Home />
+            </Route>
+            <Route exact path="/map">
+              <Map
+                colors={colors}
+                data={states_data}
+                fields={fields}
+                query={query}
+              />
+            </Route>
+            <Route exact path="/personal_income">
+              <Chart1 data={states_data} />
+            </Route>
+            <Route exact path="/unemployment_rate">
+              <Chart2 data={states_data} />
+            </Route>
+            <Route exact path="/house_price">
+              <Chart3 data={states_data} />
+            </Route>
+            <Route exact path="/average_monthly_morgage">
+              <Chart4 data={states_data} />
+            </Route>
+            <Route exact path="/weekly_household_income">
+              <Chart5 data={states_data} />
+            </Route>
+            <Route component={NotFound} />
+          </Switch>
         </BrowserRouter>
       </div>
-    ) : null;
+    );
   }
 }
 
